@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Cloud Practitioner Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Ema Overlay -->
+        <div id="ema-overlay" class="hidden">
+            <img id="ema-image" src="" alt="Feedback Ema">
+        </div>
+
+        <!-- Bueno Effect -->
+        <div id="bueno-overlay" class="hidden">
+            <div class="bueno-text">Bueno!</div>
+            <div class="fireworks">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <h1>AWS Cloud Practitioner Quiz</h1>
+                <div id="quiz-header-info" class="hidden">
+                    <span id="timer">90:00</span>
+                    <span id="progress">Domanda 1/65</span>
+                    <button id="exit-btn" class="secondary-btn">Esci</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- HOME VIEW -->
+            <section id="home-view" class="view active">
+                <div class="welcome-box">
+                    <h2>Benvenuto! Seleziona un modulo per iniziare.</h2>
+                    <p>Ogni modulo simula l'esame reale: 90 minuti per rispondere alle domande.</p>
+                </div>
+
+                <div id="module-list" class="grid-layout">
+                    <!-- Modules injected here -->
+                </div>
+
+                <div class="error-bank-section">
+                    <h3>🏦 Banca Errori</h3>
+                    <div id="error-stats">
+                        <p>Hai <span id="total-errors">0</span> domande da rivedere.</p>
+                    </div>
+                    <div class="actions">
+                        <button id="retry-errors-btn" class="primary-btn" disabled>Riprova Solo Errori</button>
+                        <button id="clear-errors-btn" class="danger-btn" disabled>Svuota Tutto</button>
+                    </div>
+                    <ul id="error-list" class="hidden">
+                        <!-- Error items injected here -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- QUIZ VIEW -->
+            <section id="quiz-view" class="view hidden">
+                <div class="card question-card">
+                    <div class="question-header">
+                        <span id="question-id" class="badge">QD-001</span>
+                    </div>
+                    <div id="question-text">
+                        <!-- Question text -->
+                    </div>
+                    <div id="options-container" class="options-grid">
+                        <!-- Options injected here -->
+                    </div>
+                    <div id="explanation-container" class="hidden">
+                        <h4>Spiegazione</h4>
+                        <div id="explanation-text"></div>
+                    </div>
+                    <div class="quiz-controls">
+                        <button id="prev-btn" class="secondary-btn" disabled>Precedente</button>
+                        <button id="confirm-btn" class="primary-btn">Conferma Risposta</button>
+                        <button id="next-btn" class="secondary-btn">Successiva</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESULTS VIEW -->
+            <section id="results-view" class="view hidden">
+                <div class="card results-card">
+                    <h2>Risultati Quiz</h2>
+                    <div class="score-circle">
+                        <span id="score-percentage">0%</span>
+                        <small>Corrette</small>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="label">Punteggio</span>
+                            <span class="value" id="score-text">0/0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Tempo</span>
+                            <span class="value" id="time-taken">00:00</span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="home-btn" class="secondary-btn">Torna alla Home</button>
+                        <button id="retry-btn" class="primary-btn">Riprova Modulo</button>
+                    </div>
+
+                    <h3>Riepilogo Domande</h3>
+                    <div id="results-list">
+                        <!-- Detailed results injected here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
