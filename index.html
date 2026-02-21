@@ -65,6 +65,35 @@
                 </div>
             </section>
 
+            <!-- MODE SELECTION VIEW -->
+            <section id="mode-select-view" class="view hidden">
+                <div class="card mode-card-highlight">
+                    <h2 id="selected-module-title">Titolo Modulo</h2>
+                    <p>Scegli come vuoi esercitarti oggi:</p>
+
+                    <div class="mode-options">
+                        <div class="mode-option" id="full-quiz-mode">
+                            <h3>📑 Esame Completo</h3>
+                            <p>Tutte le domande del modulo con timer di 90 minuti.</p>
+                            <button id="start-full-btn" class="primary-btn">Inizia Esame</button>
+                        </div>
+
+                        <div class="mode-sep">O</div>
+
+                        <div class="mode-option" id="filtered-quiz-mode">
+                            <h3>🔍 Studio Mirato (AI Filter)</h3>
+                            <p>Filtra le domande per argomento (es: S3, EC2, Sicurezza).</p>
+                            <div class="filter-input-group">
+                                <input type="text" id="filter-keywords" placeholder="Inserisci argomenti...">
+                                <button id="start-filtered-btn" class="primary-btn">Filtra e Inizia</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="back-to-home-btn" class="secondary-btn" style="margin-top: 2rem;">Annulla e Torna
+                        Indietro</button>
+                </div>
+            </section>
+
             <!-- QUIZ VIEW -->
             <section id="quiz-view" class="view hidden">
                 <div class="card question-card">

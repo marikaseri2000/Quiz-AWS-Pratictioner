@@ -24,6 +24,7 @@ const views = {
     home: document.getElementById('home-view'),
     quiz: document.getElementById('quiz-view'),
     results: document.getElementById('results-view'),
+    modeSelect: document.getElementById('mode-select-view'),
 };
 
 const els = {
@@ -50,6 +51,12 @@ const els = {
     homeBtn: document.getElementById('home-btn'),
     retryBtn: document.getElementById('retry-btn'),
     resultsList: document.getElementById('results-list'),
+    // Mode selection elements
+    selectedModuleTitle: document.getElementById('selected-module-title'),
+    startFullBtn: document.getElementById('start-full-btn'),
+    startFilteredBtn: document.getElementById('start-filtered-btn'),
+    filterKeywords: document.getElementById('filter-keywords'),
+    backToHomeBtn: document.getElementById('back-to-home-btn'),
 };
 
 // --- Initialization ---
@@ -83,6 +90,11 @@ function setupEventListeners() {
     if (els.retryBtn) els.retryBtn.addEventListener('click', restartQuiz);
     if (els.retryErrorsBtn) els.retryErrorsBtn.addEventListener('click', startErrorQuiz);
     if (els.clearErrorsBtn) els.clearErrorsBtn.addEventListener('click', clearErrors);
+
+    // Mode selection listeners
+    if (els.startFullBtn) els.startFullBtn.addEventListener('click', startFullQuiz);
+    if (els.startFilteredBtn) els.startFilteredBtn.addEventListener('click', startFilteredQuiz);
+    if (els.backToHomeBtn) els.backToHomeBtn.addEventListener('click', () => switchView('home'));
 }
 
 // --- View Navigation ---
@@ -184,7 +196,8 @@ async function startModule(moduleId) {
             throw new Error('Nessuna domanda trovata nel file JSON. Struttura non riconosciuta.');
         }
 
-        startQuizSession();
+        // Instead of starting session, show mode selection
+        showModeSelection(mod.title);
     } catch (err) {
         let msg = 'Errore caricamento modulo:\n' + err.message;
         if (window.location.protocol === 'file:') {
@@ -193,6 +206,40 @@ async function startModule(moduleId) {
         alert(msg);
         console.error('❌ ERRORE:', err);
     }
+}
+
+// --- Mode Selection & Filtering ---
+function showModeSelection(moduleTitle) {
+    if (els.selectedModuleTitle) els.selectedModuleTitle.textContent = moduleTitle;
+    if (els.filterKeywords) els.filterKeywords.value = '';
+    switchView('modeSelect');
+}
+
+function startFullQuiz() {
+    state.quizMode = 'standard';
+    startQuizSession();
+}
+
+function startFilteredQuiz() {
+    const keywords = els.filterKeywords.value.trim().toLowerCase();
+    if (!keywords) {
+        alert('Inserisci almeno una parola chiave per filtrare!');
+        return;
+    }
+
+    const filtered = state.questions.filter(q => {
+        const searchText = (q.text + ' ' + q.options.join(' ') + ' ' + q.explanation).toLowerCase();
+        return keywords.split(/[\s,]+/).some(k => searchText.includes(k));
+    });
+
+    if (filtered.length === 0) {
+        alert('Nessuna domanda trovata per questi argomenti. Prova con parole diverse!');
+        return;
+    }
+
+    state.quizMode = 'filtered';
+    state.questions = filtered;
+    startQuizSession();
 }
 
 // --- Question Normalization ---
