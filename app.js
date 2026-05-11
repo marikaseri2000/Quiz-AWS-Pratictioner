@@ -24,7 +24,6 @@ const views = {
     home: document.getElementById('home-view'),
     quiz: document.getElementById('quiz-view'),
     results: document.getElementById('results-view'),
-    modeSelect: document.getElementById('mode-select-view'),
 };
 
 const els = {
@@ -51,12 +50,6 @@ const els = {
     homeBtn: document.getElementById('home-btn'),
     retryBtn: document.getElementById('retry-btn'),
     resultsList: document.getElementById('results-list'),
-    // Mode selection elements
-    selectedModuleTitle: document.getElementById('selected-module-title'),
-    startFullBtn: document.getElementById('start-full-btn'),
-    startFilteredBtn: document.getElementById('start-filtered-btn'),
-    filterKeywords: document.getElementById('filter-keywords'),
-    backToHomeBtn: document.getElementById('back-to-home-btn'),
 };
 
 // --- Initialization ---
@@ -90,11 +83,6 @@ function setupEventListeners() {
     if (els.retryBtn) els.retryBtn.addEventListener('click', restartQuiz);
     if (els.retryErrorsBtn) els.retryErrorsBtn.addEventListener('click', startErrorQuiz);
     if (els.clearErrorsBtn) els.clearErrorsBtn.addEventListener('click', clearErrors);
-
-    // Mode selection listeners
-    if (els.startFullBtn) els.startFullBtn.addEventListener('click', startFullQuiz);
-    if (els.startFilteredBtn) els.startFilteredBtn.addEventListener('click', startFilteredQuiz);
-    if (els.backToHomeBtn) els.backToHomeBtn.addEventListener('click', () => switchView('home'));
 }
 
 // --- View Navigation ---
@@ -196,8 +184,7 @@ async function startModule(moduleId) {
             throw new Error('Nessuna domanda trovata nel file JSON. Struttura non riconosciuta.');
         }
 
-        // Instead of starting session, show mode selection
-        showModeSelection(mod.title);
+        startQuizSession();
     } catch (err) {
         let msg = 'Errore caricamento modulo:\n' + err.message;
         if (window.location.protocol === 'file:') {
@@ -206,40 +193,6 @@ async function startModule(moduleId) {
         alert(msg);
         console.error('❌ ERRORE:', err);
     }
-}
-
-// --- Mode Selection & Filtering ---
-function showModeSelection(moduleTitle) {
-    if (els.selectedModuleTitle) els.selectedModuleTitle.textContent = moduleTitle;
-    if (els.filterKeywords) els.filterKeywords.value = '';
-    switchView('modeSelect');
-}
-
-function startFullQuiz() {
-    state.quizMode = 'standard';
-    startQuizSession();
-}
-
-function startFilteredQuiz() {
-    const keywords = els.filterKeywords.value.trim().toLowerCase();
-    if (!keywords) {
-        alert('Inserisci almeno una parola chiave per filtrare!');
-        return;
-    }
-
-    const filtered = state.questions.filter(q => {
-        const searchText = (q.text + ' ' + q.options.join(' ') + ' ' + q.explanation).toLowerCase();
-        return keywords.split(/[\s,]+/).some(k => searchText.includes(k));
-    });
-
-    if (filtered.length === 0) {
-        alert('Nessuna domanda trovata per questi argomenti. Prova con parole diverse!');
-        return;
-    }
-
-    state.quizMode = 'filtered';
-    state.questions = filtered;
-    startQuizSession();
 }
 
 // --- Question Normalization ---
@@ -373,7 +326,8 @@ function renderQuestion() {
             q.options.forEach((opt, idx) => {
                 console.log(`🔍 Opzione ${idx} valore:`, JSON.stringify(opt));
 
-                const isSelected = state.answers[q.id] === idx;
+                const ans = state.answers[q.id];
+                const isSelected = Array.isArray(ans) ? ans.includes(idx) : ans === idx;
                 let classes = 'option-btn';
 
                 if (isAnswered) {
@@ -414,26 +368,57 @@ function renderQuestion() {
 window.selectOption = function (idx) {
     if (state.locked) return;
 
-    if (els.optionsContainer) {
-        const buttons = els.optionsContainer.querySelectorAll('.option-btn');
-        buttons.forEach(b => b.classList.remove('selected'));
-        if (buttons[idx]) buttons[idx].classList.add('selected');
+    const q = state.questions[state.currentIndex];
+    const isMultiple = q.correctIndices.length > 1;
+
+    if (!state.tempSelection || !Array.isArray(state.tempSelection)) {
+        state.tempSelection = [];
     }
 
-    state.tempSelection = idx;
+    if (isMultiple) {
+        const selIdx = state.tempSelection.indexOf(idx);
+        if (selIdx > -1) {
+            state.tempSelection.splice(selIdx, 1);
+        } else {
+            if (state.tempSelection.length < q.correctIndices.length) {
+                state.tempSelection.push(idx);
+            } else {
+                state.tempSelection.shift();
+                state.tempSelection.push(idx);
+            }
+        }
+    } else {
+        state.tempSelection = [idx];
+    }
+
+    if (els.optionsContainer) {
+        const buttons = els.optionsContainer.querySelectorAll('.option-btn');
+        buttons.forEach((b, i) => {
+            if (state.tempSelection.includes(i)) {
+                b.classList.add('selected');
+            } else {
+                b.classList.remove('selected');
+            }
+        });
+    }
 };
 
 // --- Action Handlers ---
 function submitAnswer() {
-    if (state.tempSelection === undefined && state.answers[state.questions[state.currentIndex].id] === undefined) return;
+    if ((!state.tempSelection || state.tempSelection.length === 0) && state.answers[state.questions[state.currentIndex].id] === undefined) return;
 
     const q = state.questions[state.currentIndex];
-    const selectedIdx = state.tempSelection;
+    
+    if (state.tempSelection !== undefined && state.tempSelection.length > 0) {
+        state.answers[q.id] = [...state.tempSelection];
+        state.tempSelection = undefined;
+    }
 
-    state.answers[q.id] = selectedIdx;
-    state.tempSelection = undefined;
-
-    const isCorrect = q.correctIndices.includes(selectedIdx);
+    const userAns = state.answers[q.id];
+    const ansArray = Array.isArray(userAns) ? userAns : [userAns];
+    
+    const isCorrect = q.correctIndices.length === ansArray.length && 
+                      q.correctIndices.every(val => ansArray.includes(val));
 
     if (isCorrect) {
         showBuenoEffect();
@@ -496,8 +481,12 @@ function finishQuiz() {
 
     let correctCount = 0;
     state.questions.forEach(q => {
-        if (state.answers[q.id] !== undefined && q.correctIndices.includes(state.answers[q.id])) {
-            correctCount++;
+        const userAns = state.answers[q.id];
+        if (userAns !== undefined) {
+            const ansArray = Array.isArray(userAns) ? userAns : [userAns];
+            const isCorrect = q.correctIndices.length === ansArray.length && 
+                              q.correctIndices.every(val => ansArray.includes(val));
+            if (isCorrect) correctCount++;
         }
     });
 
@@ -515,9 +504,11 @@ function finishQuiz() {
 
     if (els.resultsList) {
         els.resultsList.innerHTML = state.questions.map((q, idx) => {
-            const userIdx = state.answers[q.id];
-            const isCorrect = userIdx !== undefined && q.correctIndices.includes(userIdx);
-            const skipped = userIdx === undefined;
+            const userAns = state.answers[q.id];
+            const ansArray = Array.isArray(userAns) ? userAns : (userAns !== undefined ? [userAns] : []);
+            const isCorrect = userAns !== undefined && q.correctIndices.length === ansArray.length && 
+                              q.correctIndices.every(val => ansArray.includes(val));
+            const skipped = userAns === undefined || (Array.isArray(userAns) && userAns.length === 0);
             const statusClass = skipped ? 'skipped' : (isCorrect ? 'correct' : 'wrong');
             const statusText = skipped ? 'Saltata' : (isCorrect ? 'Corretta' : 'Errata');
 
